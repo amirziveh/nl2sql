@@ -31,5 +31,5 @@ export default tseslint.config(
       "@typescript-eslint/no-unsafe-call": "off",
       "@typescript-eslint/no-unsafe-return": "off",
     },
-  }
+  },
 );

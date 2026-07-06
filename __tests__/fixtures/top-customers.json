@@ -1,0 +1,50 @@
+{
+  "description": "Top customer by revenue",
+  "schemas": [
+    {
+      "name": "orders",
+      "columns": [
+        { "name": "id", "type": "INT" },
+        { "name": "customer", "type": "STRING" },
+        { "name": "revenue", "type": "FLOAT" }
+      ]
+    }
+  ],
+  "question": "Who is the top customer by revenue?",
+  "expectedAnswerContains": "Acme",
+  "sqlResults": [
+    { "columns": ["customer", "revenue"], "rows": [{ "customer": "Acme", "revenue": 1500 }] }
+  ],
+  "responses": [
+    {
+      "role": "assistant",
+      "content": null,
+      "toolCalls": [
+        {
+          "id": "c1",
+          "name": "run_sql",
+          "arguments": {
+            "sql": "SELECT customer, revenue FROM orders ORDER BY revenue DESC LIMIT 1",
+            "purpose": "find top customer",
+            "explanation": "sorted desc"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": null,
+      "toolCalls": [
+        {
+          "id": "c2",
+          "name": "finish",
+          "arguments": {
+            "answer": "Acme is the top customer with $1,500 in revenue.",
+            "sql": "SELECT customer, revenue FROM orders ORDER BY revenue DESC LIMIT 1",
+            "explanation": "highest revenue first"
+          }
+        }
+      ]
+    }
+  ]
+}

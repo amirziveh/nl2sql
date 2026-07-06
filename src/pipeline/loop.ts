@@ -12,7 +12,7 @@ import { formatResultForLLM } from "./result-formatter.js";
 import { defaultHistoryReducer } from "./history.js";
 import type { QueryResult } from "../types.js";
 
-export interface RunPipelineOptions {
+interface RunPipelineOptions {
   llm: LlmProvider;
   sqlProvider: SqlProvider;
   systemPrompt: string;

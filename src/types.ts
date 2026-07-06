@@ -42,14 +42,11 @@ export interface QueryResult {
   steps: Step[];
 }
 
-export type { ChatMessage, LlmProvider, ToolCall, ToolDefinition } from "./llm/types.js";
+export type { ChatMessage, LlmProvider } from "./llm/types.js";
 export type {
   QueryResultData,
   SqlProvider,
   StaticSqlProviderInput,
   TableSchema,
-  ColumnSchema,
-  AlaSqlProviderInput,
 } from "./sql/types.js";
-export type { Step, VerificationOutcome } from "./pipeline/types.js";
-export type { ColumnRef } from "./sql/types.js";
+export type { Step } from "./pipeline/types.js";

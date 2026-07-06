@@ -8,7 +8,7 @@ import {
   instructionsSection,
 } from "./sections.js";
 
-export interface PromptContext {
+interface PromptContext {
   schemas: TableSchema[];
   samples?: Record<string, Record<string, unknown>[]>;
   relationships?: string;

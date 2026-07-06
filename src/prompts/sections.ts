@@ -2,7 +2,7 @@ import type { TableSchema } from "../sql/types.js";
 import { buildSchemaDescription, buildSchemaWithSamples } from "../schema/describe.js";
 import { buildRelationshipHints } from "../schema/relationships.js";
 
-export interface SchemaSectionInput {
+interface SchemaSectionInput {
   schemas: TableSchema[];
   samples?: Record<string, Record<string, unknown>[]>;
   relationships?: string;

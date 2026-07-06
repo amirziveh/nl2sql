@@ -14,11 +14,16 @@
     "alasql"
   ],
   "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": {
+        "import": "./dist/index.d.ts",
+        "require": "./dist/index.d.cts"
+      },
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.cjs"
     }
   },
   "files": [
@@ -35,18 +40,25 @@
     "format": "prettier --write .",
     "changeset": "changeset",
     "version": "changeset version",
-    "release": "changeset publish"
+    "release": "changeset publish",
+    "knip": "knip",
+    "publint": "publint",
+    "attw": "attw --pack"
   },
   "engines": {
     "node": ">=18"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.15.4",
     "@changesets/cli": "^2.31.0",
     "@eslint/js": "^9.39.4",
+    "@vitest/coverage-v8": "^2.1.9",
     "alasql": "^4.17.3",
     "eslint": "^9.39.4",
+    "knip": "^5.88.1",
     "openai": "^4.104.0",
     "prettier": "^3.9.4",
+    "publint": "^0.2.12",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.62.1",
@@ -59,6 +71,11 @@
   "peerDependenciesMeta": {
     "alasql": {
       "optional": true
+    }
+  },
+  "overrides": {
+    "@arethetypeswrong/core": {
+      "fflate": "0.7.4"
     }
   }
 }

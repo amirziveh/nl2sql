@@ -1,6 +1,6 @@
 import { describe, it, expectTypeOf } from "vitest";
 import type { AgentConfig, QueryContext, QueryResult } from "../../src/types.js";
-import type { LlmProvider } from "../../src/types.js";
+import type { LlmProvider } from "../../src/llm/types.js";
 
 describe("type contracts", () => {
   it("AgentConfig requires provider", () => {

@@ -5,7 +5,7 @@ import type { ColumnRef } from "../sql/types.js";
 
 const MIN_LEVENSHTEIN = 3;
 
-export interface VerifySqlInput {
+interface VerifySqlInput {
   sql: string;
   schemas: TableSchema[];
   result?: QueryResultData;

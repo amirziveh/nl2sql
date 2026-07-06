@@ -2,6 +2,44 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+## ⚡ EXECUTION PROGRESS — README for the next session
+
+**Status as of this commit (hand-off):** Tasks 1–8 complete. Tasks 9–21 + final review remain.
+
+**Completed tasks (do NOT redo):**
+- Task 1: `chore: package skeleton` (commit `957662b`) + `fix(package): align exports.import path with tsup output` (`77c3909`)
+- Task 2: `chore: vitest, eslint (flat config), prettier setup` (`be04998`)
+- Task 3: `chore: changesets setup` (`7404e5d`)
+- Task 4: `feat(types): shared public types` (`42eb932`)
+- Task 5: `feat(sql): extractColumnRefs tokenizer` (`beb7d83`) — note: `ColumnRef` was moved from `pipeline/types.ts` to `sql/types.ts` to satisfy layer rules
+- Task 6: `feat(schema): description + relationship helpers` (`498ffe3`)
+- Task 7: `feat(pipeline): result formatter` (`41af3b3`)
+- Task 8: `feat(pipeline): verifier with hard + advisory checks` (`29d8062`) — note: tokenizer got an added `identifyTableRefs` export so the verifier could produce `Table "X"` vs `Column "X"` error messages
+
+**Next session start here:** Task 9 (Prompt System). Resume the subagent-driven-development pattern: dispatch implementer with full task text + context, then spec compliance reviewer, then mark complete and proceed. The user opted to skip per-task code-quality reviews for the remainder — do spec-compliance only per task, with a FINAL whole-implementation code-quality review after Task 21.
+
+**Verification state at hand-off:** 38 tests passing, `npm run lint` clean, `npm run typecheck` clean. Repo-local git identity set: `nl2sql-agent <agent@nl2sql.local>`. Branch is `master` (rename to `main` planned for Task 21's CI workflow step).
+
+**Resume by running:**
+```bash
+cd /home/ubuntu/nl2sql
+git log --oneline -10
+npm test   # confirm 38 tests pass
+npm run lint && npm run typecheck   # confirm clean
+```
+
+Then read "**Task 9: Prompt System**" below (around line ~2000) and dispatch the implementer subagent with that section's verbatim test + implementation code.
+
+**Cross-task lessons worth knowing before resuming:**
+1. `tsconfig.json` has `verbatimModuleSyntax: true` — all type-only imports MUST use `import type`. ESLint flat-config (`eslint.config.mjs`) enforces this.
+2. Relative imports use `.js` extensions (e.g., `../sql/types.js`) — required by `moduleResolution: "bundler"` + ESM emission.
+3. `tsconfig.json` has `noUncheckedIndexedAccess: true` — array access returns `T | undefined`; subagents handle via `!` non-null assertion in controlled places.
+4. Plan's verbatim code sometimes needs minor adjustments to pass the verbatim tests (Tasks 5 and 8 both had this). When implementers hit this, they should MODIFY IMPLEMENTATION to satisfy tests, not the other way around. Document any deviation in the implementer report.
+5. Repo-local git identity (`nl2sql-agent <agent@nl2sql.local>`) was set inline via `git -c` in Task 1's commit + as a local config in some later tasks. Don't change it; just commit using this identity.
+6. The `.opencode/` directory is Opencode's internal plugin state — it's gitignored at the project root.
+
+---
+
 **Goal:** Ship `nl2sql-agent@1.0.0` — a browser-first TypeScript package that converts natural-language questions to SQL through a function-calling agent loop with verification layers.
 
 **Architecture:** Modular core, single package. Layered structure: `llm/` (provider adapters), `sql/` (provider adapters + tokenizer), `pipeline/` (loop, verifier, formatter, history), `prompts/` (composable sections), `schema/` (description helpers). Functional core, imperative shell via `Nl2SqlAgent` class. v1 ships OpenAI adapter + Static + AlaSQL SQL providers.

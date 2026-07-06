@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>nl2sql-agent browser demo</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 720px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      textarea {
+        width: 100%;
+        box-sizing: border-box;
+        font: inherit;
+        padding: 0.5rem;
+      }
+      button {
+        margin-top: 0.5rem;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+      }
+      pre {
+        background: #f4f4f5;
+        padding: 1rem;
+        border-radius: 4px;
+        overflow-x: auto;
+      }
+      .step {
+        border-left: 2px solid #888;
+        padding-left: 1rem;
+        margin: 0.5rem 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>nl2sql-agent browser demo</h1>
+    <p>
+      This demo loads a small in-memory dataset into AlaSQL and lets you ask
+      natural-language questions. You need an OpenAI API key.
+    </p>
+    <label>
+      OpenAI API key:
+      <input id="api-key" type="password" placeholder="sk-..." style="width: 320px" />
+    </label>
+    <p>
+      <textarea id="question" rows="2">Top 3 customers by revenue</textarea>
+      <br />
+      <button id="ask">Ask</button>
+      <button id="stop">Stop</button>
+    </p>
+    <div id="output"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "nl2sql-agent-browser-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "alasql": "^4",
+    "nl2sql-agent": "file:../../",
+    "openai": "^4"
+  },
+  "devDependencies": {
+    "vite": "^5"
+  }
+}

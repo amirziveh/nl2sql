@@ -13,6 +13,30 @@ const CLAUSE_KEYWORDS = new Set([
   "on", "group", "by", "order", "having",
 ]);
 
+export function identifyTableRefs(sql: string): Set<string> {
+  const normalized = sql.replace(/\s+/g, " ").trim();
+  if (!/^select/i.test(normalized)) {
+    return new Set();
+  }
+  const tokens = tokenize(normalized);
+  const refs = new Set<string>();
+  const TABLE_CLAUSES = new Set(["from", "join"]);
+  for (let i = 0; i < tokens.length; i++) {
+    const lower = tokens[i]!.toLowerCase();
+    if (!TABLE_CLAUSES.has(lower)) continue;
+    let j = i + 1;
+    while (j < tokens.length && tokens[j] === " ") j++;
+    if (j >= tokens.length) continue;
+    const next = tokens[j]!;
+    if (next === "(" || next === ")") continue;
+    if (next === "*" || next === "," || next === ".") continue;
+    if (/^['"`].*['"`]$/.test(next) || /^\d/.test(next)) continue;
+    if (SQL_KEYWORDS.has(next.toLowerCase())) continue;
+    refs.add(stripBrackets(next).toLowerCase());
+  }
+  return refs;
+}
+
 export function extractColumnRefs(sql: string): ColumnRef[] {
   const normalized = sql.replace(/\s+/g, " ").trim();
   if (!/^select/i.test(normalized)) {

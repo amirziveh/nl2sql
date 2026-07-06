@@ -1,0 +1,12 @@
+{
+  "name": "nl2sql-agent-node-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node index.mjs"
+  },
+  "dependencies": {
+    "nl2sql-agent": "file:../../",
+    "openai": "^4"
+  }
+}

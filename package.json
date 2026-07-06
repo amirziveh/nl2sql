@@ -43,11 +43,20 @@
   "devDependencies": {
     "@changesets/cli": "^2.31.0",
     "@eslint/js": "^9.39.4",
+    "alasql": "^4.17.3",
     "eslint": "^9.39.4",
     "prettier": "^3.9.4",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.62.1",
     "vitest": "^2.1.9"
+  },
+  "peerDependencies": {
+    "alasql": "^4"
+  },
+  "peerDependenciesMeta": {
+    "alasql": {
+      "optional": true
+    }
   }
 }

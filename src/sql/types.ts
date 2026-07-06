@@ -33,3 +33,8 @@ export interface StaticSqlProviderInput {
 export interface AlaSqlProviderInput {
   tables: Record<string, Record<string, unknown>[]>;
 }
+
+export interface ColumnRef {
+  table?: string;
+  column: string;
+}

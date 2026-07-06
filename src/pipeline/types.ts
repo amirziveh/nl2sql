@@ -1,9 +1,4 @@
-import type { QueryResultData } from "../sql/types.js";
-
-export interface ColumnRef {
-  table?: string;
-  column: string;
-}
+import type { QueryResultData, ColumnRef } from "../sql/types.js";
 
 export interface VerificationOutcome {
   status: "passed" | "warning" | "failed";

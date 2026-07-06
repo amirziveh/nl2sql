@@ -51,4 +51,5 @@ export type {
   ColumnSchema,
   AlaSqlProviderInput,
 } from "./sql/types.js";
-export type { Step, VerificationOutcome, ColumnRef } from "./pipeline/types.js";
+export type { Step, VerificationOutcome } from "./pipeline/types.js";
+export type { ColumnRef } from "./sql/types.js";

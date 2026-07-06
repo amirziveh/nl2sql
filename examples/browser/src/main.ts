@@ -1,4 +1,4 @@
-import { Nl2SqlAgent, createOpenAiProvider, createAlaSqlProvider } from "nl2sql-agent";
+import { Nl2SqlAgent, createOpenAiProvider, createAlaSqlProvider } from "nl2sql";
 import OpenAI from "openai";
 
 const tables = {

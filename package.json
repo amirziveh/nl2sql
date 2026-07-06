@@ -1,6 +1,6 @@
 {
-  "name": "nl2sql-agent",
-  "version": "0.0.0",
+  "name": "nl2sql",
+  "version": "1.0.0",
   "description": "Browser-first TypeScript toolkit for natural-language to SQL agent loops with verification.",
   "type": "module",
   "license": "MIT",

@@ -1,4 +1,4 @@
-import { Nl2SqlAgent, createOpenAiProvider, createStaticSqlProvider } from "nl2sql-agent";
+import { Nl2SqlAgent, createOpenAiProvider, createStaticSqlProvider } from "nl2sql";
 import OpenAI from "openai";
 
 const apiKey = process.env.OPENAI_API_KEY;

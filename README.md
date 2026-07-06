@@ -16,7 +16,7 @@ Most NL2SQL libraries just translate a question to a single SQL string and call 
 ## Install
 
 ```bash
-npm install nl2sql-agent openai
+npm install nl2sql openai
 ```
 
 `openai` is a peer dependency when you use the bundled OpenAI adapter. If you implement your own `LlmProvider`, you don't need it.
@@ -24,7 +24,7 @@ npm install nl2sql-agent openai
 ## Quickstart
 
 ```ts
-import { Nl2SqlAgent, createOpenAiProvider, createStaticSqlProvider } from "nl2sql-agent";
+import { Nl2SqlAgent, createOpenAiProvider, createStaticSqlProvider } from "nl2sql";
 import OpenAI from "openai";
 
 const agent = new Nl2SqlAgent({

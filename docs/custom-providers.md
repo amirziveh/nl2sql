@@ -5,7 +5,7 @@
 ## Custom LlmProvider
 
 ```ts
-import type { LlmProvider } from "nl2sql-agent";
+import type { LlmProvider } from "nl2sql";
 
 const myProvider: LlmProvider = {
   async chat({ messages, tools }) {
@@ -22,7 +22,7 @@ const myProvider: LlmProvider = {
 ## Custom SqlProvider
 
 ```ts
-import type { SqlProvider } from "nl2sql-agent";
+import type { SqlProvider } from "nl2sql";
 
 const postgresProvider: SqlProvider = {
   async listSchemas() {

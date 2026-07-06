@@ -3,13 +3,13 @@
 ## Install
 
 ```bash
-npm install nl2sql-agent openai
+npm install nl2sql openai
 ```
 
 ## Create your first agent
 
 ```ts
-import { Nl2SqlAgent, createOpenAiProvider, createStaticSqlProvider } from "nl2sql-agent";
+import { Nl2SqlAgent, createOpenAiProvider, createStaticSqlProvider } from "nl2sql";
 import OpenAI from "openai";
 
 const agent = new Nl2SqlAgent({

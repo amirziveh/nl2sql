@@ -6,7 +6,7 @@
     "start": "node index.mjs"
   },
   "dependencies": {
-    "nl2sql-agent": "file:../../",
+    "nl2sql": "file:../../",
     "openai": "^4"
   }
 }

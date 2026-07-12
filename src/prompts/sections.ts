@@ -20,12 +20,24 @@ in your final answer must come from a query you executed.`;
 export function capabilitiesSection(): string {
   return `# Capabilities & SQL Dialect
 
-- Database: SQL-92 compatible (similar to SQLite / AlaSQL).
+- Database: SQL-92 compatible (AlaSQL).
 - Identifiers: use [bracketed identifiers] for table names, column names,
   and aliases that collide with SQL reserved words (e.g., [VALUE], [COUNT]).
 - Column names are CASE-SENSITIVE. Match the casing shown in the schema.
 - Default LIMIT 200 on SELECTs unless aggregating.
-- Use AS for aliases. Avoid reserved words as aliases when possible.`;
+- Use AS for aliases. Avoid reserved words as aliases when possible.
+
+# AlaSQL Gotchas
+
+- Negative number literals in CASE/WHEN may fail to parse. Instead of
+  \`CASE WHEN [Discount] > -500 THEN ...\` use
+  \`CASE WHEN [Discount] < 0 AND [Discount] > -500 THEN ...\`
+  or compute with positive values: \`CASE WHEN 0 - [Discount] < 500 THEN ...\`
+- OFFSET without FETCH may fail. Use \`LIMIT n OFFSET m\` together.
+- TOP n is supported as an alternative to LIMIT n.
+- CAST to FLOAT or DECIMAL for numeric operations on string columns.
+- If a query fails, do NOT retry with minor variations. Either fix the
+  specific syntax issue or try a completely different approach.`;
 }
 
 export function schemaSection(input: SchemaSectionInput): string {
@@ -43,7 +55,10 @@ ${description}${hints ? `
 ${hints}` : ""}`;
 }
 
-export function workflowSection(): string {
+export function workflowSection(opts: { requireSqlBeforeFinish: boolean }): string {
+  const finishRule = opts.requireSqlBeforeFinish
+    ? "- You MUST call \`run_sql\` at least once before calling \`finish\`."
+    : "- You MAY call \`finish\` directly if the user's message does not require data (e.g. greetings, thanks, meta-questions). For data questions, still run SQL first.";
   return `# Workflow
 
 Follow this plan→query→verify→answer loop:
@@ -59,11 +74,18 @@ Follow this plan→query→verify→answer loop:
 
 # Rules
 
-- You MUST call \`run_sql\` at least once before calling \`finish\`.
+${finishRule}
 - Never report numbers from memory or reasoning — only from query results.
 - If a query returns an error, fix the SQL and retry.
 - If you receive a "warnings" list in a tool result, consider running a
-  follow-up query to confirm before finishing.`;
+  follow-up query to confirm before finishing.
+- Results may show "showing N of M rows (truncated)" — this means you have
+  enough data. Do NOT run additional queries to fetch the remaining rows.
+  The aggregates and preview are sufficient for analysis.
+- Do NOT repeat queries you have already run. If you need the same data,
+  refer to previous results.
+- Aim for 2-4 queries total for most questions. If you find yourself running
+  many similar queries, stop and answer with what you have.`;
 }
 
 export function outputSection(opts: { language: string }): string {

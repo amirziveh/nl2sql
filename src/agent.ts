@@ -8,7 +8,7 @@ import type {
 } from "./types.js";
 import { runPipeline } from "./pipeline/loop.js";
 import { buildSystemPrompt } from "./prompts/system-prompt.js";
-import { ALL_TOOLS } from "./prompts/tools.js";
+import { buildTools } from "./prompts/tools.js";
 import { createStaticSqlProvider } from "./sql/static-provider.js";
 
 const DEFAULT_MAX_STEPS = 20;
@@ -18,7 +18,9 @@ export class Nl2SqlAgent {
   private readonly config: Required<
     Pick<AgentConfig, "maxSteps" | "language">
   > &
-    Pick<AgentConfig, "provider" | "historyReducer" | "sqlHints">;
+    Pick<AgentConfig, "provider" | "historyReducer" | "sqlHints"> & {
+      requireSqlBeforeFinish: boolean;
+    };
 
   constructor(config: AgentConfig) {
     this.config = {
@@ -27,6 +29,7 @@ export class Nl2SqlAgent {
       language: config.language ?? "en",
       historyReducer: config.historyReducer,
       sqlHints: config.sqlHints,
+      requireSqlBeforeFinish: config.requireSqlBeforeFinish ?? true,
     };
   }
 
@@ -44,12 +47,14 @@ export class Nl2SqlAgent {
       relationships: context.relationships,
       language: this.config.language,
       instructions: context.instructions,
+      requireSqlBeforeFinish: this.config.requireSqlBeforeFinish,
     });
 
     const mergedCallbacks: QueryCallbacks = {
       onStep: callbacks?.onStep,
       onFinalSQL: callbacks?.onFinalSQL,
       onAnswer: callbacks?.onAnswer,
+      onToken: callbacks?.onToken,
       signal: callbacks?.signal,
     };
 
@@ -59,9 +64,10 @@ export class Nl2SqlAgent {
       systemPrompt,
       question,
       maxSteps: this.config.maxSteps,
-      tools: ALL_TOOLS,
+      tools: buildTools(this.config.requireSqlBeforeFinish),
       maxRowsWarning: this.config.sqlHints?.maxRowsWarning ?? DEFAULT_MAX_ROWS_WARNING,
       allowNonSelect: this.config.sqlHints?.allowNonSelect,
+      requireSqlBeforeFinish: this.config.requireSqlBeforeFinish,
       historyReducer: this.config.historyReducer,
       callbacks: mergedCallbacks,
     });

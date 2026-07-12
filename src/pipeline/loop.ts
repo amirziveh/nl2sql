@@ -10,6 +10,7 @@ import type { Step, VerificationOutcome } from "./types.js";
 import { verifySql } from "./verifier.js";
 import { formatResultForLLM } from "./result-formatter.js";
 import { defaultHistoryReducer } from "./history.js";
+import { sanitizeReservedAliases } from "../sql/sanitize.js";
 import type { QueryResult } from "../types.js";
 
 interface RunPipelineOptions {
@@ -21,6 +22,7 @@ interface RunPipelineOptions {
   tools: ToolDefinition[];
   maxRowsWarning?: number;
   allowNonSelect?: boolean;
+  requireSqlBeforeFinish?: boolean;
   historyReducer?: (messages: ChatMessage[], max: number) => ChatMessage[];
   historyMax?: number;
   instructions?: string;
@@ -44,8 +46,10 @@ export async function runPipeline(
   options: RunPipelineOptions
 ): Promise<QueryResult> {
   const { llm, sqlProvider, systemPrompt, question, maxSteps, tools } = options;
+  const requireSql = options.requireSqlBeforeFinish ?? true;
   const reducer = options.historyReducer ?? defaultHistoryReducer;
   const historyMax = options.historyMax ?? 8;
+  const onToken = options.callbacks?.onToken;
 
   const messages: ChatMessage[] = [
     { role: "system", content: systemPrompt },
@@ -55,6 +59,9 @@ export async function runPipeline(
   const steps: Step[] = [];
   const schemas = await sqlProvider.listSchemas();
   let executedAtLeastOneSQL = false;
+  const executedSqlMap = new Map<string, QueryResultData>();
+  let consecutiveFailures = 0;
+  const MAX_CONSECUTIVE_FAILURES = 3;
 
   for (let stepIndex = 0; stepIndex < maxSteps; stepIndex++) {
     void stepIndex;
@@ -63,6 +70,7 @@ export async function runPipeline(
       messages: trimmed,
       tools,
       signal: options.callbacks?.signal,
+      onToken,
     });
 
     const toolCalls = response.toolCalls;
@@ -72,7 +80,24 @@ export async function runPipeline(
     if (sqlCalls.length > 0 && !finishCall) {
       const callResults = await Promise.all(
         sqlCalls.map(async (tc) => {
-          const sql = asString(tc.arguments.sql);
+          const rawSql = asString(tc.arguments.sql);
+          const sql = sanitizeReservedAliases(rawSql);
+          const sqlKey = normalizeSqlForKey(sql);
+
+          const cached = executedSqlMap.get(sqlKey);
+          if (cached) {
+            return {
+              call: tc,
+              result: cached,
+              verification: {
+                status: "passed" as const,
+                hardFailures: [],
+                warnings: ["This query was already executed. Using cached result. Do NOT repeat it."],
+                columnRefs: [],
+              },
+            };
+          }
+
           const verification = await verifySql({
             sql,
             schemas,
@@ -88,7 +113,15 @@ export async function runPipeline(
               error: verification.hardFailures.join("; "),
             };
           } else {
-            result = await sqlProvider.execute(sql);
+            try {
+              result = await sqlProvider.execute(sql);
+            } catch (e) {
+              result = {
+                columns: [],
+                rows: [],
+                error: e instanceof Error ? e.message : String(e),
+              };
+            }
             const reVerified = await verifySql({
               sql,
               schemas,
@@ -101,6 +134,10 @@ export async function runPipeline(
             Object.assign(verification, reVerified);
           }
 
+          if (!result.error) {
+            executedSqlMap.set(sqlKey, result);
+          }
+
           return { call: tc, result, verification };
         })
       );
@@ -108,8 +145,9 @@ export async function runPipeline(
       executedAtLeastOneSQL = true;
 
       for (const r of callResults) {
+        const stepSql = sanitizeReservedAliases(asString(r.call.arguments.sql));
         const step: Step = {
-          sql: asString(r.call.arguments.sql),
+          sql: stepSql,
           purpose: asString(r.call.arguments.purpose),
           explanation: asString(r.call.arguments.explanation),
           result: r.result,
@@ -121,11 +159,34 @@ export async function runPipeline(
 
       messages.push(buildAssistantToolCallMessage(response));
       messages.push(...buildToolResultMessages(callResults));
+
+      const anyFailed = callResults.some((r) => r.result.error);
+      const allFailed = callResults.every((r) => r.result.error);
+      if (allFailed) {
+        consecutiveFailures++;
+      } else if (anyFailed) {
+        // partial failure — don't reset but don't increment either
+      } else {
+        consecutiveFailures = 0;
+      }
+
+      if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+        consecutiveFailures = 0;
+        messages.push({
+          role: "system",
+          content:
+            "You have had " + MAX_CONSECUTIVE_FAILURES + " consecutive query failures. " +
+            "Your approach is not working. Try a completely different query strategy, " +
+            "or if you have enough data from earlier successful queries, call `finish` now " +
+            "with the best answer you can provide. Do NOT repeat the same query pattern.",
+        });
+      }
+
       continue;
     }
 
     if (finishCall) {
-      if (!executedAtLeastOneSQL) {
+      if (requireSql && !executedAtLeastOneSQL) {
         messages.push({
           role: "assistant",
           content: response.content ?? "",
@@ -172,11 +233,24 @@ export async function runPipeline(
     steps,
     tools,
     signal: options.callbacks?.signal,
+    onToken,
   });
 }
 
 function asString(value: unknown): string {
   return typeof value === "string" ? value : "";
+}
+
+function normalizeSqlForKey(sql: string): string {
+  return sql
+    .replace(/--[^\n]*/g, "")       // strip line comments
+    .replace(/\/\*[\s\S]*?\*\//g, "") // strip block comments
+    .replace(/\s+/g, " ")            // collapse whitespace
+    .replace(/\(\s+/g, "(")          // normalize spaces after parens
+    .replace(/\s+\)/g, ")")
+    .replace(/,\s*/g, ", ")          // normalize comma spacing
+    .trim()
+    .toLowerCase();
 }
 
 interface CallResultEntry {
@@ -230,6 +304,7 @@ async function forceFinalAnswer(input: {
   steps: Step[];
   tools: ToolDefinition[];
   signal?: AbortSignal;
+  onToken?: (token: string) => void;
 }): Promise<QueryResult> {
   const messages = [...input.messages];
   messages.push({
@@ -243,6 +318,7 @@ async function forceFinalAnswer(input: {
       messages,
       tools: input.tools,
       signal: input.signal,
+      onToken: input.onToken,
     });
 
     const finishCall = response.toolCalls.find((tc) => tc.name === "finish");

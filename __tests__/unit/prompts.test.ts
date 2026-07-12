@@ -25,7 +25,7 @@ describe("sections", () => {
   });
 
   it("workflowSection mentions plan/query/verify/answer", () => {
-    const w = workflowSection();
+    const w = workflowSection({ requireSqlBeforeFinish: true });
     expect(w).toContain("plan");
     expect(w).toContain("run_sql");
     expect(w).toContain("finish");

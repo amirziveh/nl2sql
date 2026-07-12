@@ -4,6 +4,7 @@ export type { CreateOpenAiProviderOptions } from "./llm/openai-adapter.js";
 export { createStaticSqlProvider } from "./sql/static-provider.js";
 export { createAlaSqlProvider } from "./sql/alasql-provider.js";
 export { extractColumnRefs } from "./sql/tokenize.js";
+export { sanitizeReservedAliases } from "./sql/sanitize.js";
 export {
   buildSchemaDescription,
   buildSchemaWithSamples,
@@ -12,7 +13,7 @@ export { buildRelationshipHints } from "./schema/relationships.js";
 export { formatResultForLLM } from "./pipeline/result-formatter.js";
 export { verifySql } from "./pipeline/verifier.js";
 export { buildSystemPrompt } from "./prompts/system-prompt.js";
-export { ALL_TOOLS, RUN_SQL_TOOL, FINISH_TOOL } from "./prompts/tools.js";
+export { ALL_TOOLS, RUN_SQL_TOOL, FINISH_TOOL, buildFinishTool, buildTools } from "./prompts/tools.js";
 export { defaultHistoryReducer } from "./pipeline/history.js";
 
 export type {

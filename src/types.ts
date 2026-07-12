@@ -15,6 +15,7 @@ export interface AgentConfig {
     maxRowsWarning?: number;
     allowNonSelect?: boolean;
   };
+  requireSqlBeforeFinish?: boolean;
 }
 
 export interface QueryContext {
@@ -31,6 +32,8 @@ export interface QueryCallbacks {
   onStep?: (step: Step) => void;
   onFinalSQL?: (sql: string) => void;
   onAnswer?: (answer: string) => void;
+  /** Streams answer tokens as they arrive from the LLM (content + finish tool answer field). */
+  onToken?: (token: string) => void;
   signal?: AbortSignal;
 }
 

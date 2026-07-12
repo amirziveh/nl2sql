@@ -21,6 +21,8 @@ export interface ChatOptions {
   tools: ToolDefinition[];
   temperature?: number;
   signal?: AbortSignal;
+  /** When provided, the LLM call uses streaming and forwards content + finish-answer tokens. */
+  onToken?: (token: string) => void;
 }
 
 export interface AssistantMessage {

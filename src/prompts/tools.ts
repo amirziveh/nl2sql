@@ -23,27 +23,39 @@ export const RUN_SQL_TOOL: ToolDefinition = {
   },
 };
 
-export const FINISH_TOOL: ToolDefinition = {
-  name: "finish",
-  description: "Submit the final answer after running at least one SQL query.",
-  parameters: {
-    type: "object",
-    properties: {
-      answer: {
-        type: "string",
-        description: "Final natural-language answer to the user's question.",
+export function buildFinishTool(requireSqlBeforeFinish: boolean): ToolDefinition {
+  return {
+    name: "finish",
+    description: requireSqlBeforeFinish
+      ? "Submit the final answer after running at least one SQL query."
+      : "Submit the final answer. For data questions, run SQL first. For greetings or non-data messages, call finish directly with just the answer.",
+    parameters: {
+      type: "object",
+      properties: {
+        answer: {
+          type: "string",
+          description: "Final natural-language answer to the user's question.",
+        },
+        sql: {
+          type: "string",
+          description: "The canonical SQL that produced the data you are reporting. Omit if no SQL was needed.",
+        },
+        explanation: {
+          type: "string",
+          description: "Brief explanation of why this SQL answers the question. Omit if no SQL was needed.",
+        },
       },
-      sql: {
-        type: "string",
-        description: "The canonical SQL that produced the data you are reporting.",
-      },
-      explanation: {
-        type: "string",
-        description: "Brief explanation of why this SQL answers the question.",
-      },
+      required: requireSqlBeforeFinish
+        ? ["answer", "sql", "explanation"]
+        : ["answer"],
     },
-    required: ["answer", "sql", "explanation"],
-  },
-};
+  };
+}
 
+export function buildTools(requireSqlBeforeFinish: boolean): ToolDefinition[] {
+  return [RUN_SQL_TOOL, buildFinishTool(requireSqlBeforeFinish)];
+}
+
+// ponytail: backwards-compat default for any existing consumer
+export const FINISH_TOOL: ToolDefinition = buildFinishTool(true);
 export const ALL_TOOLS: ToolDefinition[] = [RUN_SQL_TOOL, FINISH_TOOL];

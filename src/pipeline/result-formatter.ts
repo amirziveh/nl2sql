@@ -1,6 +1,6 @@
 import type { QueryResultData } from "../sql/types.js";
 
-const PREVIEW_LIMIT = 20;
+const PREVIEW_LIMIT = 200;
 
 export function formatResultForLLM(result: QueryResultData): string {
   if (result.error) {
@@ -17,7 +17,8 @@ export function formatResultForLLM(result: QueryResultData): string {
 
   if (rows.length > 0) {
     const preview = rows.slice(0, PREVIEW_LIMIT);
-    text += `\nFirst ${preview.length} rows:\n${preview.map((r) => JSON.stringify(r)).join("\n")}`;
+    const truncated = rows.length > preview.length;
+    text += `\nShowing ${preview.length} of ${rows.length} rows${truncated ? " (truncated — you have enough data, do NOT query for the remaining rows)" : ""}:\n${preview.map((r) => JSON.stringify(r)).join("\n")}`;
   }
 
   return text;

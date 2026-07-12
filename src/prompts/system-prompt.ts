@@ -15,9 +15,11 @@ interface PromptContext {
   dialectHints?: Record<string, unknown>;
   language: string;
   instructions?: string;
+  requireSqlBeforeFinish?: boolean;
 }
 
 export function buildSystemPrompt(ctx: PromptContext): string {
+  const requireSql = ctx.requireSqlBeforeFinish ?? true;
   const sections: string[] = [
     roleSection(),
     capabilitiesSection(),
@@ -26,7 +28,7 @@ export function buildSystemPrompt(ctx: PromptContext): string {
       samples: ctx.samples,
       relationships: ctx.relationships,
     }),
-    workflowSection(),
+    workflowSection({ requireSqlBeforeFinish: requireSql }),
     outputSection({ language: ctx.language }),
   ];
   if (ctx.instructions) {

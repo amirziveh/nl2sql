@@ -57,8 +57,8 @@ ${hints}` : ""}`;
 
 export function workflowSection(opts: { requireSqlBeforeFinish: boolean }): string {
   const finishRule = opts.requireSqlBeforeFinish
-    ? "- You MUST call \`run_sql\` at least once before calling \`finish\`."
-    : "- You MAY call \`finish\` directly if the user's message does not require data (e.g. greetings, thanks, meta-questions). For data questions, still run SQL first.";
+    ? "- You MUST call `run_sql` at least once before calling `finish`."
+    : "- You MAY call `finish` directly if the user's message does not require data (e.g. greetings, thanks, meta-questions). For data questions, still run SQL first.";
   return `# Workflow
 
 Follow this plan→query→verify→answer loop:

@@ -30,6 +30,7 @@ interface RunPipelineOptions {
     onStep?: (step: Step) => void;
     onFinalSQL?: (sql: string) => void;
     onAnswer?: (answer: string) => void;
+    onToken?: (token: string) => void;
     signal?: AbortSignal;
   };
 }

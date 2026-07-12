@@ -13,7 +13,24 @@ export interface CreateOpenAiProviderOptions {
   temperature?: number;
 }
 
-type ChatCompletion = OpenAI.Chat.Completions.ChatCompletion;
+interface StreamDelta {
+  content?: string | null;
+  tool_calls?: Array<{
+    index: number;
+    id?: string;
+    function?: { name?: string; arguments?: string };
+  }>;
+}
+
+interface StreamChunk {
+  choices?: Array<{ delta?: StreamDelta }>;
+}
+
+interface ToolCallState {
+  id: string;
+  name: string;
+  argsStr: string;
+}
 
 export function createOpenAiProvider(
   client: OpenAI,
@@ -30,7 +47,7 @@ export function createOpenAiProvider(
 }
 
 // ---------------------------------------------------------------------------
-//  Non-streaming (original path)
+//  Non-streaming
 // ---------------------------------------------------------------------------
 
 async function chatNonStreaming(
@@ -39,9 +56,9 @@ async function chatNonStreaming(
   options: CreateOpenAiProviderOptions
 ): Promise<AssistantMessage> {
   const params = toCreateParams(input, options);
-  const response = (await client.chat.completions.create(
-    params as Parameters<OpenAI["chat"]["completions"]["create"]>[0]
-  )) as ChatCompletion;
+  const response = await client.chat.completions.create(
+    params as unknown as Parameters<OpenAI["chat"]["completions"]["create"]>[0]
+  ) as OpenAI.Chat.Completions.ChatCompletion;
   const choice = response.choices[0];
   if (!choice) {
     throw new Error("OpenAI returned no choices");
@@ -49,8 +66,8 @@ async function chatNonStreaming(
   const msg = choice.message;
   const toolCalls: ToolCall[] = (msg.tool_calls ?? []).map((tc) => ({
     id: tc.id,
-    name: (tc as any).function.name,
-    arguments: safeParseArguments((tc as any).function.arguments),
+    name: tc.function.name,
+    arguments: safeParseArguments(tc.function.arguments),
   }));
   return {
     role: "assistant",
@@ -60,7 +77,7 @@ async function chatNonStreaming(
 }
 
 // ---------------------------------------------------------------------------
-//  Streaming — forwards content tokens AND finish tool answer field tokens
+//  Streaming
 // ---------------------------------------------------------------------------
 
 async function chatStreaming(
@@ -68,41 +85,39 @@ async function chatStreaming(
   input: ChatOptions,
   options: CreateOpenAiProviderOptions
 ): Promise<AssistantMessage> {
-  const params = {
+  const params: Record<string, unknown> = {
     ...toCreateParams(input, options),
     stream: true,
-  } as Record<string, unknown>;
+  };
 
-  const stream = await (client.chat.completions.create as any)(params);
+  const stream = (await client.chat.completions.create(
+    params as unknown as Parameters<OpenAI["chat"]["completions"]["create"]>[0]
+  )) as AsyncIterable<StreamChunk>;
 
   let content = "";
   const toolStates = new Map<number, ToolCallState>();
-
-  // Streaming extraction state for the finish tool's answer field
-  let answerStreamed = 0; // chars of unescaped answer already forwarded
+  let answerStreamed = 0;
 
   for await (const chunk of stream) {
     const delta = chunk.choices?.[0]?.delta;
     if (!delta) continue;
 
-    // 1. Forward content tokens
     if (delta.content) {
       content += delta.content;
       input.onToken!(delta.content);
     }
 
-    // 2. Accumulate tool call arguments; stream finish answer field
     if (delta.tool_calls) {
       for (const tc of delta.tool_calls) {
-        const idx: number = tc.index;
+        const idx = tc.index;
         if (!toolStates.has(idx)) {
           toolStates.set(idx, { id: "", name: "", argsStr: "" });
         }
         const state = toolStates.get(idx)!;
         if (tc.id) state.id = tc.id;
-        if ((tc as any).function?.name) state.name = (tc as any).function.name;
-        if ((tc as any).function?.arguments) {
-          state.argsStr += (tc as any).function.arguments;
+        if (tc.function?.name) state.name = tc.function.name;
+        if (tc.function?.arguments) {
+          state.argsStr += tc.function.arguments;
 
           if (state.name === "finish") {
             const extracted = extractAnswerField(state.argsStr);
@@ -131,24 +146,12 @@ async function chatStreaming(
 //  Incremental JSON answer extraction
 // ---------------------------------------------------------------------------
 
-/**
- * Extract the value of the "answer" field from a (possibly incomplete) JSON
- * string of tool-call arguments. Returns the unescaped value up to what's
- * available — the rest will arrive in subsequent chunks.
- */
 function extractAnswerField(argsJson: string): string {
-  // Match "answer": "..." — the (?:[^"\\]|\\.)*  captures everything inside
-  // the string value, handling escaped chars, stopping at the closing quote.
   const match = argsJson.match(/"answer"\s*:\s*"((?:[^"\\]|\\.)*)/);
   if (!match) return "";
   return unescapeJsonString(match[1]!);
 }
 
-/**
- * Unescape a JSON string value (the content between quotes). Stops cleanly on
- * incomplete escape sequences at the end (e.g. "\u06" with only 2 hex digits),
- * which will be completed in the next chunk.
- */
 function unescapeJsonString(raw: string): string {
   let result = "";
   let i = 0;
@@ -159,8 +162,7 @@ function unescapeJsonString(raw: string): string {
       i += 1;
       continue;
     }
-    // ch === "\\"
-    if (i + 1 >= raw.length) break; // incomplete escape — wait for next chunk
+    if (i + 1 >= raw.length) break;
     const next = raw[i + 1]!;
     switch (next) {
       case "n": result += "\n"; i += 2; break;
@@ -173,8 +175,7 @@ function unescapeJsonString(raw: string): string {
       case "f": result += "\f"; i += 2; break;
       case "u": {
         if (i + 6 > raw.length) {
-          // Incomplete \uXXXX — wait for next chunk
-          i = raw.length; // break out of loop
+          i = raw.length;
         } else {
           const hex = raw.slice(i + 2, i + 6);
           if (/^[0-9a-fA-F]{4}$/.test(hex)) {
@@ -198,12 +199,6 @@ function unescapeJsonString(raw: string): string {
 // ---------------------------------------------------------------------------
 //  Shared helpers
 // ---------------------------------------------------------------------------
-
-interface ToolCallState {
-  id: string;
-  name: string;
-  argsStr: string;
-}
 
 function toCreateParams(
   input: ChatOptions,

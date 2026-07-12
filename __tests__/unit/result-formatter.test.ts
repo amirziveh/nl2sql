@@ -25,12 +25,12 @@ describe("formatResultForLLM", () => {
     expect(out).toContain("max=200");
   });
 
-  it("caps row preview at 20", () => {
-    const rows = Array.from({ length: 30 }, (_, i) => ({ id: i }));
+  it("caps row preview at 200", () => {
+    const rows = Array.from({ length: 300 }, (_, i) => ({ id: i }));
     const r: QueryResultData = { columns: ["id"], rows };
     const out = formatResultForLLM(r);
-    expect(out).toContain("First 20 rows:");
-    expect(out.match(/"id":\d+/g)?.length).toBe(20);
+    expect(out).toContain("Showing 200 of 300 rows (truncated");
+    expect(out.match(/"id":\d+/g)?.length).toBe(200);
   });
 
   it("handles empty result", () => {
